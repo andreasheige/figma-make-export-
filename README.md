@@ -11,27 +11,27 @@ fetched into your own browser session. Nothing leaves your machine.
 
 1. Open the Make file, switch to the **code view**, reload the page.
 2. Open DevTools console, type `allow pasting` + Enter, paste
-   [`extract.js`](extract.js). Saves `<slug>-export.json` to `~/Downloads`.
+   [`scripts/extract.js`](scripts/extract.js). Saves `<slug>-export.json` to `~/Downloads`.
 3. Unpack and verify:
 
 ```sh
-node unpack.mjs ~/Downloads/<slug>-export.json ../my-project
-node check-imports.mjs ../my-project
+node scripts/unpack.mjs ~/Downloads/<slug>-export.json ../my-project
+node scripts/check-imports.mjs ../my-project
 ```
 
 ## Files
 
 | File | Purpose |
 |---|---|
-| `extract.js` | Console snippet. Auto-discovers the snapshot URL, downloads a `{path: contents}` JSON. |
-| `unpack.mjs` | Explodes that JSON into a directory tree. Rejects paths escaping the target. |
-| `check-imports.mjs` | Verifies every local import resolves. Non-zero exit if not. |
+| `scripts/extract.js` | Console snippet. Auto-discovers the snapshot URL, downloads a `{path: contents}` JSON. |
+| `scripts/unpack.mjs` | Explodes that JSON into a directory tree. Rejects paths escaping the target. |
+| `scripts/check-imports.mjs` | Verifies every local import resolves. Non-zero exit if not. |
 | `SKILL.md` | Claude Code skill wrapping the above, incl. the failure modes. |
 
 ## Limits
 
 - **Text files only.** Binary assets (images, fonts) are not extracted; they
-  show up as unresolved imports from `check-imports.mjs`. Save those by hand
+  show up as unresolved imports from `scripts/check-imports.mjs`. Save those by hand
   from Figma's file explorer.
 - **No entry point.** `index.html` / `src/main.tsx` / `src/index.ts` come from
   Figma's sandbox, not the snapshot, so the output won't run without
