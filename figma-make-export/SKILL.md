@@ -18,6 +18,7 @@ SKILL.md                     this file
 scripts/extract.js           browser console snippet
 scripts/unpack.mjs           export JSON -> directory tree
 scripts/check-imports.mjs    completeness check
+scripts/scaffold.mjs         add the host shell so it runs locally
 ```
 
 Paths below assume the skill is installed at
@@ -84,18 +85,41 @@ Parses every import specifier and checks it resolves on disk. Exits non-zero
 if anything is unresolved. Report unresolved specifiers honestly rather than
 claiming a clean export.
 
-## Known gaps, expected in every export
+**4. Make it run.**
 
-The extractor collects **text files only**, matched by extension. Expect:
+```sh
+node ~/.claude/skills/figma-make-export/scripts/scaffold.mjs <target-dir>
+cd <target-dir> && pnpm install && pnpm dev
+```
 
-- **Binary assets missing** (`.png`, `.jpg`, fonts). They surface as
-  unresolved imports in step 3. Easiest fix: click the asset in Figma's file
-  explorer, right-click the preview, Save image as. Automating one image is
-  slower than saving it.
-- **No entry point.** `index.html`, `src/main.tsx` and the `src/index.ts` that
-  `vite.config.ts` names as its lib entry are supplied by Figma's sandbox and
-  are not in the snapshot. **The project will not `pnpm dev` as extracted.**
-  Say so plainly; offer to scaffold, don't assume.
+An extracted project is complete and still will not run. Figma builds Make
+projects as a **library its own sandbox page mounts** - look at
+`vite.config.ts`: `build.lib`, `preserveModules`, `vite-plugin-dts` against a
+types-only tsconfig. `index.html` and the React entry were never part of the
+project, so there is nothing to recover. They have to be written.
+
+`scaffold.mjs` writes them: `index.html`, `src/main.tsx` wired to the detected
+App component and CSS entry, and an app-mode `vite.config.ts` (the original is
+preserved as `vite.config.lib.ts`). It also patches `package.json` (promotes
+the React peer deps to real ones, adds dev/build/preview, drops
+`vite-plugin-dts`) and rewrites `pnpm-workspace.yaml`.
+
+Two traps it handles, both of which break a local run:
+
+- Figma pins `supportedArchitectures` to **linux/glibc** for its sandbox.
+  Left in place, native packages resolve wrong on macOS.
+- Native postinstalls must be allowed or `pnpm build` refuses to run.
+  pnpm >= 11 spells this `allowBuilds:` (a name -> true map); pnpm 10 spells
+  it `onlyBuiltDependencies:` (a list). The scaffold writes both.
+
+It never overwrites an existing file - it reports what it skipped.
+
+## Known gaps
+
+- **Binary assets are not extracted.** `scaffold.mjs` writes 1x1 PNG
+  placeholders for missing image imports so the build resolves, and prints
+  each one it created. Tell the user to replace them - clicking the asset in
+  Figma's file explorer and saving the preview is faster than automating it.
 
 ## Alternative worth mentioning
 

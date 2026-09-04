@@ -29,8 +29,11 @@ Then ask Claude Code to export a Figma Make file and the skill loads itself.
 3. Unpack and verify:
 
 ```sh
-node figma-make-export/scripts/unpack.mjs ~/Downloads/<slug>-export.json ../my-project
-node figma-make-export/scripts/check-imports.mjs ../my-project
+S=figma-make-export/scripts
+node $S/unpack.mjs ~/Downloads/<slug>-export.json ../my-project
+node $S/check-imports.mjs ../my-project   # every import resolve?
+node $S/scaffold.mjs ../my-project        # add the host shell Figma keeps
+cd ../my-project && pnpm install && pnpm dev
 ```
 
 ## Layout
@@ -42,17 +45,22 @@ figma-make-export/                     the skill - symlink this into ~/.claude/s
 └── scripts/
     ├── extract.js                     browser console snippet
     ├── unpack.mjs                     export JSON -> directory tree
-    └── check-imports.mjs              completeness check
+    ├── check-imports.mjs              completeness check
+    └── scaffold.mjs                   add the host shell so it runs locally
 ```
 
 ## Limits
 
 - **Text files only.** Binary assets (images, fonts) are not extracted; they
-  show up as unresolved imports from `check-imports.mjs`. Save those by hand
-  from Figma's file explorer - automating one image is slower.
-- **No entry point.** `index.html`, `src/main.tsx` and the `src/index.ts` that
-  `vite.config.ts` names as its lib entry come from Figma's sandbox, not the
-  snapshot. The output will not run without scaffolding.
+  show up as unresolved imports from `check-imports.mjs`. `scaffold.mjs` writes
+  1x1 placeholders so the build resolves and lists each one - replace them by
+  saving the real asset from Figma's file explorer.
+- **No entry point** in the snapshot. Figma builds Make projects as a library
+  its sandbox page mounts, so `index.html` and the React entry were never part
+  of your project. `scaffold.mjs` writes them, converts the library build to an
+  app build, and clears two traps that otherwise break a local run: Figma pins
+  `supportedArchitectures` to linux/glibc, and native postinstalls must be
+  allowed or `pnpm build` refuses to start.
 - **The seat gate is server-side.** If you can't read file contents in the
   code view, they never reach your browser and no script can recover them.
   That needs a seat change in Figma org admin.
