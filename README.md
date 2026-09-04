@@ -58,3 +58,7 @@ figma-make-export/                     the skill - symlink this into ~/.claude/s
   That needs a seat change in Figma org admin.
 - **`curl` and the public REST API are dead ends** - there is no public Make
   endpoint.
+
+## License
+
+MIT - see [LICENSE](LICENSE).
